@@ -1,0 +1,12 @@
+{
+  "name": "mts-callguard-belarus",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MTS CallGuard backend adapter for MTS Belarus Virtual PBX",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

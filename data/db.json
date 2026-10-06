@@ -1,0 +1,117 @@
+{
+  "calls": [
+    {
+      "id": "f39ea491-3caf-4a2a-999e-045b585dd0bd",
+      "caller": null,
+      "callee": null,
+      "status": "received",
+      "category": "неизвестно",
+      "priority": "normal",
+      "summary": "Расшифровка не получена. Звонок зарегистрирован.",
+      "transcript": null,
+      "recordUrl": null,
+      "startedAt": "2026-10-06T17:41:15.254Z",
+      "durationSec": 0,
+      "source": "mts",
+      "needsHumanTransfer": false
+    },
+    {
+      "id": "f140c6e4-f667-4383-bd65-4d9479c369cc",
+      "caller": null,
+      "callee": null,
+      "status": "received",
+      "category": "прочее",
+      "priority": "normal",
+      "summary": "Звонящий: Обязуемся выслать счёт до 01.10. Ключевые темы: обязуемся, выслать, счёт.",
+      "transcript": "Обязуемся выслать счёт до 01.10.",
+      "recordUrl": null,
+      "startedAt": "2026-10-06T17:41:10.552Z",
+      "durationSec": 0,
+      "source": "mts",
+      "needsHumanTransfer": false
+    },
+    {
+      "id": "dabebe10-b9c1-4969-a335-9c1abc7261e5",
+      "caller": "+375291112233",
+      "callee": null,
+      "status": "received",
+      "category": "продажи",
+      "priority": "high",
+      "summary": "Звонящий: Клиент просит КП. Пришлём до пятницы, ответим в течение 3 дней.… Ключевые темы: клиент, просит, пришлём, пятницы, ответим.",
+      "transcript": "Клиент просит КП. Пришлём до пятницы, ответим в течение 3 дней. Соедините с менеджером.",
+      "recordUrl": null,
+      "startedAt": "2026-10-06T17:41:10.505Z",
+      "durationSec": 0,
+      "source": "mts",
+      "needsHumanTransfer": true
+    }
+  ],
+  "agreements": [
+    {
+      "id": "33dfad16-bb2e-4602-adf7-c157fc113b35",
+      "callId": "dabebe10-b9c1-4969-a335-9c1abc7261e5",
+      "action": "Пришлём до пятницы",
+      "dueAt": "2026-10-09T18:00:00.000Z",
+      "needsDateConfirmation": false,
+      "status": "open",
+      "createdAt": "2026-10-06T17:41:10.506Z"
+    },
+    {
+      "id": "64bbb400-36b4-40af-8a97-d4cbafc0284a",
+      "callId": "dabebe10-b9c1-4969-a335-9c1abc7261e5",
+      "action": "ответим в течение 3 дней.",
+      "dueAt": null,
+      "needsDateConfirmation": true,
+      "status": "open",
+      "createdAt": "2026-10-06T17:41:10.506Z"
+    },
+    {
+      "id": "d1eb8c27-fb04-4d74-bd71-3d1ca9a456d0",
+      "callId": "f140c6e4-f667-4383-bd65-4d9479c369cc",
+      "action": "Обязуемся выслать счёт до 01.10.",
+      "dueAt": "2027-10-01T18:00:00.000Z",
+      "needsDateConfirmation": false,
+      "status": "open",
+      "createdAt": "2026-10-06T17:41:10.552Z"
+    }
+  ],
+  "settings": {
+    "routingMode": "voice",
+    "greeting": "Здравствуйте! Иван Петров не может ответить, но ваш звонок важен. Чем могу помочь?",
+    "faq": [
+      {
+        "question": "часы работы",
+        "answer": "Работаем с 9:00 до 18:00 по минскому времени."
+      },
+      {
+        "question": "адрес",
+        "answer": "г. Минск, прит. Победителей, 110."
+      }
+    ],
+    "priorityRules": {
+      "keywordsHigh": [
+        "vip"
+      ],
+      "transferPhrase": "соедините с менеджером"
+    },
+    "agreementTriggers": [
+      "пришл",
+      "отправ",
+      "обязуем",
+      "свяжем",
+      "созвон",
+      "встретим",
+      "перезвон",
+      "вышлем",
+      "до пятницы",
+      "до понедельника",
+      "в течение",
+      "на следующей неделе",
+      "срок",
+      "обещаем"
+    ],
+    "reminderBeforeHours": 24,
+    "transcriptionAccuracyTarget": 0.9
+  },
+  "eventsCount": 3
+}

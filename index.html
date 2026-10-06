@@ -1,0 +1,210 @@
+--- public/index.html (原始)
+
+
++++ public/index.html (修改后)
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MTS CallGuard — личный кабинет</title>
+<style>
+  :root { --bg:#0f1420; --card:#1a2132; --accent:#e3000f; --text:#e8ecf4; --muted:#8b96ab; --ok:#2ecc71; --warn:#f1c40f; --bad:#e74c3c; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background:var(--bg); color:var(--text); }
+  header { display:flex; align-items:center; gap:12px; padding:16px 24px; background:var(--card); border-bottom:2px solid var(--accent); }
+  header h1 { font-size:18px; margin:0; }
+  header .badge { font-size:12px; color:var(--muted); }
+  main { max-width:1100px; margin:0 auto; padding:20px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin-bottom:20px; }
+  .kpi { background:var(--card); border-radius:10px; padding:14px; }
+  .kpi b { font-size:24px; display:block; }
+  .kpi span { color:var(--muted); font-size:12px; }
+  section { background:var(--card); border-radius:10px; padding:16px; margin-bottom:20px; }
+  section h2 { margin:0 0 12px; font-size:16px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th, td { text-align:left; padding:8px 6px; border-bottom:1px solid #2a3450; vertical-align:top; }
+  th { color:var(--muted); font-weight:600; }
+  .tag { display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; background:#2a3450; }
+  .tag.high { background:var(--accent); }
+  .tag.open { background:#2a4d6e; }
+  .tag.done { background:var(--ok); color:#08351a; }
+  .tag.overdue { background:var(--bad); }
+  button { background:var(--accent); color:#fff; border:none; border-radius:6px; padding:6px 12px; cursor:pointer; font-size:12px; }
+  button.secondary { background:#2a3450; }
+  button:hover { opacity:.85; }
+  input[type=text], select { background:#0f1420; color:var(--text); border:1px solid #2a3450; border-radius:6px; padding:6px 8px; font-size:13px; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:10px; }
+  .summary { color:var(--muted); max-width:340px; }
+  .empty { color:var(--muted); font-style:italic; }
+</style>
+</head>
+<body>
+<header>
+  <h1>📞 MTS CallGuard</h1>
+  <div class="badge" id="tgBadge">Telegram: …</div>
+  <div style="flex:1"></div>
+  <button onclick="loadAll()">Обновить</button>
+</header>
+<main>
+  <div class="grid" id="kpis"></div>
+
+  <section>
+    <h2>⏰ Ближайшие сроки и просрочки (договорённости)</h2>
+    <div id="reminders"><span class="empty">—</span></div>
+  </section>
+
+  <section>
+    <h2>📝 Договорённости</h2>
+    <div class="row">
+      <select id="agFilter" onchange="renderAgreements()">
+        <option value="">все</option>
+        <option value="open">открытые</option>
+        <option value="overdue">просроченные</option>
+        <option value="done">выполненные</option>
+      </select>
+      <button class="secondary" onclick="location.href='/api/agreements.csv'">Экспорт CSV</button>
+    </div>
+    <table><thead><tr><th>Обязательство</th><th>Срок</th><th>Статус</th><th></th></tr></thead>
+    <tbody id="agBody"></tbody></table>
+  </section>
+
+  <section>
+    <h2>История звонков</h2>
+    <div class="row">
+      <input type="text" id="demoPhone" placeholder="+375291112233" value="+375291112233">
+      <input type="text" id="demoText" style="flex:1" placeholder="Текст расшифровки демо-звонка…"
+             value="Здравствуйте, это клиент. Пришлите КП до 15.10 по поставке оргтехники. Если нужно — соедините с менеджером.">
+      <button onclick="runDemo()">Запустить демо звонка</button>
+    </div>
+    <table><thead><tr><th>Номер</th><th>Категория</th><th>Приоритет</th><th>Резюме от ИИ</th><th>Действия</th></tr></thead>
+    <tbody id="callsBody"></tbody></table>
+  </section>
+
+  <section>
+    <h2>Настройки сценария (мастер ≤5 минут)</h2>
+    <div class="row">
+      <label>Маршрутизация:
+        <select id="setRouting"><option value="voice">голосовой ответ ИИ</option><option value="telegram">перевод в Telegram-чат</option></select>
+      </label>
+      <label>Фраза перевода на человека:
+        <input type="text" id="setTransfer" size="24">
+      </label>
+      <label>Напоминать за (часов):
+        <input type="text" id="setReminder" size="4">
+      </label>
+    </div>
+    <div class="row">
+      <label style="flex:1">Приветствие ИИ: <input type="text" id="setGreeting" style="width:100%"></label>
+    </div>
+    <button onclick="saveSettings()">Сохранить настройки</button>
+    <span id="settingsMsg" class="empty"></span>
+  </section>
+</main>
+<script>
+let calls = [], agreements = [];
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmtDate = (iso) => iso ? new Date(iso).toLocaleDateString('ru-RU') + ' ' + new Date(iso).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}) : '⚠️ уточнить';
+
+async function j(url, opts) { const r = await fetch(url, opts); return r.json(); }
+
+async function loadAll() {
+  const [health, c, a, s, rem] = await Promise.all([
+    j('/api/health'), j('/api/calls'), j('/api/agreements'), j('/api/settings'), j('/api/reminders')
+  ]);
+  calls = c; agreements = a;
+  $('#tgBadge').textContent = 'Telegram: ' + (health.telegramConfigured ? '✅ настроен' : '❌ не настроен (.env)');
+  renderKpis(health, s, rem);
+  renderReminders(rem);
+  renderAgreements();
+  renderCalls();
+  fillSettings(s);
+}
+
+function renderKpis(h, s, rem) {
+  const high = calls.filter(x=>x.priority==='high').length;
+  const done = agreements.filter(x=>x.status==='done').length;
+  const overdue = agreements.filter(x=>x.status==='overdue').length;
+  const rate = agreements.length ? Math.round(done/agreements.length*100) : 0;
+  $('#kpis').innerHTML = `
+    <div class="kpi"><b>${calls.length}</b><span>звонков всего</span></div>
+    <div class="kpi"><b>${high}</b><span>важных (не пропущено)</span></div>
+    <div class="kpi"><b>${agreements.length}</b><span>договорённостей</span></div>
+    <div class="kpi"><b>${rate}%</b><span>выполнено</span></div>
+    <div class="kpi"><b style="color:${overdue?'var(--bad)':'var(--ok)'}">${overdue}</b><span>просрочено</span></div>
+    <div class="kpi"><b>${rem.upcoming.length}</b><span>напоминаний близко</span></div>`;
+}
+
+function renderReminders(rem) {
+  const items = [...rem.overdue.map(a=>({...a,_t:'overdue'})), ...rem.upcoming.map(a=>({...a,_t:'soon'}))];
+  $('#reminders').innerHTML = items.length ? items.map(a =>
+    `<div>${a._t==='overdue'?'🔴':'🟡'} <b>${esc(a.action)}</b> — ${fmtDate(a.dueAt)}</div>`).join('')
+    : '<span class="empty">Просрочек и близких сроков нет 👍</span>';
+}
+
+function renderAgreements() {
+  const f = $('#agFilter').value;
+  const list = f ? agreements.filter(a=>a.status===f) : agreements;
+  $('#agBody').innerHTML = list.length ? list.map(a => `<tr>
+    <td>${esc(a.action)}</td>
+    <td>${a.dueAt?fmtDate(a.dueAt):'<button class="secondary" onclick="setDue(\''+a.id+'\')">указать срок</button>'}</td>
+    <td><span class="tag ${a.status}">${a.status}</span></td>
+    <td>${a.status!=='done'?`<button onclick="completeAg('${a.id}')">✔ Выполнено</button>`:''}</td>
+  </tr>`).join('') : '<tr><td colspan="4" class="empty">Пока пусто — запустите демо звонка.</td></tr>';
+}
+
+function renderCalls() {
+  $('#callsBody').innerHTML = calls.slice(0,30).map(c => `<tr>
+    <td>${esc(c.caller||'—')}<br><span class="empty">${c.source==='mts'?'МТС':(c.source||'')}</span></td>
+    <td><span class="tag">${esc(c.category)}</span></td>
+    <td>${c.priority==='high'?'<span class="tag high">важный</span>':'<span class="tag">обычный</span>'}${c.needsHumanTransfer?' <span class="tag high">🚨 нужен человек</span>':''}</td>
+    <td class="summary">${esc(c.summary)}</td>
+    <td>
+      <button class="secondary" onclick="toTg('${c.id}')">В Telegram</button>
+      ${c.needsHumanTransfer?`<button onclick="transfer('${c.id}')">Перехватить</button>`:''}
+    </td>
+  </tr>`).join('') || '<tr><td colspan="5" class="empty">Нет звонков.</td></tr>';
+}
+
+function fillSettings(s) {
+  $('#setRouting').value = s.routingMode;
+  $('#setTransfer').value = s.priorityRules.transferPhrase;
+  $('#setReminder').value = s.reminderBeforeHours;
+  $('#setGreeting').value = s.greeting;
+}
+
+async function saveSettings() {
+  const cur = await j('/api/settings');
+  const body = {
+    routingMode: $('#setRouting').value,
+    greeting: $('#setGreeting').value,
+    reminderBeforeHours: Number($('#setReminder').value)||24,
+    priorityRules: { ...cur.priorityRules, transferPhrase: $('#setTransfer').value }
+  };
+  await j('/api/settings', { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  $('#settingsMsg').textContent = 'Сохранено ✅';
+  loadAll();
+}
+
+async function runDemo() {
+  await j('/api/mts/test-event', { method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ caller: $('#demoPhone').value, transcript: $('#demoText').value }) });
+  loadAll();
+}
+
+async function toTg(id) { const r = await j(`/api/calls/${id}/telegram`, {method:'POST'}); alert(r.sent ? 'Отправлено в Telegram ✅' : 'Не отправлено: '+(r.detail?.reason||r.detail?.error||'см. backend')); }
+async function transfer(id) { await j(`/api/calls/${id}/transfer-human`, {method:'POST'}); loadAll(); }
+async function completeAg(id) { await j(`/api/agreements/${id}`, {method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({status:'done'})}); loadAll(); }
+async function setDue(id) {
+  const v = prompt('Срок договорённости (ГГГГ-ММ-ДДTЧЧ:ММ, локальное время):', new Date(Date.now()+864e5).toISOString().slice(0,16));
+  if (!v) return;
+  await j(`/api/agreements/${id}`, {method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({dueAt:new Date(v).toISOString()})});
+  loadAll();
+}
+
+loadAll();
+setInterval(loadAll, 30000);
+</script>
+</body>
+</html>
